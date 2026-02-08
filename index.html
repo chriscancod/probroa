@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROBRO // LOCK IN</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --card: #0d0d0d;
+            --accent: #a855f7; /* Protocol Purple */
+            --accent-glow: rgba(168, 85, 247, 0.3);
+            --border: #1a1a1a;
+            --text: #ffffff;
+            --text-dim: #555555;
+        }
+
+        body { 
+            margin: 0; font-family: 'Courier New', monospace; 
+            background: var(--bg); color: var(--text); overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: 260px; background: #080808;
+            border-right: 1px solid var(--border);
+            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100; padding: 20px;
+            box-sizing: border-box;
+        }
+        .sidebar.collapsed { transform: translateX(-240px); }
+
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+        .status-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 12px var(--accent); }
+        .status-text { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); }
+
+        #toggle-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; padding: 5px 10px; }
+        #toggle-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+        .timer-card { background: var(--card); padding: 20px; border: 1px solid var(--border); margin-bottom: 30px; border-radius: 4px; }
+        .timer-card label { font-size: 9px; color: var(--text-dim); display: block; margin-bottom: 10px; }
+        #timer-display { font-size: 42px; font-weight: bold; margin-bottom: 15px; color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); }
+
+        .timer-inputs { display: flex; gap: 10px; }
+        #timer-input { width: 50px; background: #000; border: 1px solid var(--border); color: var(--accent); padding: 5px; outline: none; }
+        .timer-inputs button { flex: 1; background: var(--accent); color: #fff; border: none; font-weight: bold; cursor: pointer; }
+
+        .island-list { display: flex; flex-direction: column; gap: 10px; }
+        .island-list button { 
+            background: none; border: none; color: var(--text-dim); text-align: left; 
+            padding: 8px; cursor: pointer; font-family: inherit; font-size: 13px;
+            border-left: 2px solid transparent;
+        }
+        .island-list button.active { color: var(--accent); border-left-color: var(--accent); background: #111; }
+
+        /* --- MAIN VIEWPORT --- */
+        .viewport { margin-left: 260px; height: 100vh; transition: margin 0.4s ease; position: relative; }
+        .sidebar.collapsed + .viewport { margin-left: 20px; }
+
+        .center-view { 
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; height: 100%; padding: 0 50px; 
+            text-align: center;
+        }
+        .protocol-header h1 { font-size: 2.5rem; margin: 0; letter-spacing: -1px; }
+        .protocol-header p { font-size: 10px; color: var(--text-dim); letter-spacing: 5px; margin-top: 10px; }
+
+        .input-group { 
+            display: flex; width: 100%; max-width: 500px; 
+            border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 40px;
+        }
+        .input-group input { flex: 1; background: none; border: none; color: #fff; font-family: inherit; outline: none; }
+        .input-group button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px; }
+
+        .grid-layout { display: flex; gap: 15px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+        
+        /* --- LINK NODES --- */
+        .link-node {
+            width: 130px; height: 90px; background: var(--card);
+            border: 1px solid var(--border); position: relative;
+            cursor: pointer; transition: 0.3s; border-radius: 4px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .link-node:hover { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); transform: translateY(-3px); }
+        .link-node span { font-size: 9px; color: var(--text-dim); margin-top: 10px; pointer-events: none; }
+        .delete-btn {
+            position: absolute; top: 5px; right: 5px; background: none; border: none;
+            color: #444; cursor: pointer; opacity: 0;
+        }
+        .link-node:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { color: #ff4444; }
+
+        /* --- INTERNAL BROWSER --- */
+        #browser-view { position: fixed; inset: 0; background: #000; z-index: 500; display: flex; flex-direction: column; }
+        .browser-nav { padding: 10px 20px; background: #0d0d0d; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { background: none; border: 1px solid #333; color: #777; padding: 5px 15px; cursor: pointer; font-size: 10px; font-family: inherit; }
+        .back-btn:hover { color: #fff; border-color: var(--accent); }
+        #web-frame { flex: 1; border: none; background: #fff; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span class="status-dot"></span>
+            <span class="status-text">PROBRO OS</span>
+            <button id="toggle-btn" onclick="toggleSidebar()">[ — ]</button>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="timer-card">
+                <label>FOCUS_CLOCK</label>
+                <div id="timer-display">25:00</div>
+                <div class="timer-inputs">
+                    <input type="number" id="timer-input" value="25" min="1">
+                    <button onclick="toggleTimer()" id="start-btn">ENGAGE</button>
+                </div>
+            </div>
+
+            <nav class="island-list">
+                <label>TARGET_VOLUMES</label>
+                <button onclick="selectIsland('School')" id="btn-School" class="active">01. SCHOOL</button>
+                <button onclick="selectIsland('Work')" id="btn-Work">02. WORK</button>
+                <button onclick="selectIsland('Break')" id="btn-Break">03. BREAK</button>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="viewport">
+        <section id="setup-view" class="center-view">
+            <div class="protocol-header">
+                <h1 id="island-title">PROBRO // SCHOOL</h1>
+                <p>ELIMINATE ALL DISTRACTIONS.</p>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="link-input" placeholder="// PASTE URL (e.g. wikipedia.org)">
+                <button onclick="handleAddLink()">+</button>
+            </div>
+
+            <div id="links-container" class="grid-layout"></div>
+        </section>
+
+        <div id="browser-view" class="hidden">
+            <div class="browser-nav">
+                <button onclick="closeBrowser()" class="back-btn">← ESCAPE_PROBRO</button>
+                <span id="url-indicator" style="font-size: 10px; color: var(--accent);"></span>
+            </div>
+            <iframe id="web-frame" src=""></iframe>
+        </div>
+    </main>
+
+    <script>
+        let currentIsland = 'School';
+        let timerInterval = null;
+        let timeLeft = 25 * 60;
+
+        let islandData = JSON.parse(localStorage.getItem('probroData')) || {
+            'School': ['wikipedia.org'], 
+            'Work': ['github.com'], 
+            'Break': ['youtube.com']
+        };
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function selectIsland(name) {
+            currentIsland = name;
+            document.getElementById('island-title').innerText = `PROBRO // ${name.toUpperCase()}`;
+            
+            document.querySelectorAll('.island-list button').forEach(btn => {
+                btn.classList.toggle('active', btn.id === `btn-${name}`);
+            });
+            
+            renderLinks();
+            closeBrowser();
+        }
+
+        function handleAddLink() {
+            const input = document.getElementById('link-input');
+            let val = input.value.trim();
+            if (val) {
+                if (!val.startsWith('http')) val = 'https://' + val;
+                islandData[currentIsland].push(val);
+                saveData();
+                renderLinks();
+                input.value = '';
+            }
+        }
+
+        function removeLink(e, index) {
+            e.stopPropagation(); // Prevents opening the link when clicking delete
+            islandData[currentIsland].splice(index, 1);
+            saveData();
+            renderLinks();
+        }
+
+        function renderLinks() {
+            const container = document.getElementById('links-container');
+            container.innerHTML = islandData[currentIsland].map((url, i) => {
+                let display = url.replace('https://','').replace('http://','').split('/')[0];
+                return `
+                    <div class="link-node" onclick="openInApp('${url}')">
+                        <button class="delete-btn" onclick="removeLink(event, ${i})">×</button>
+                        <div style="font-size: 20px; color: var(--accent);">↗</div>
+                        <span>${display.toUpperCase()}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openInApp(url) {
+            // Sites that notoriously block iframes
+            const blockers = ['google.com', 'github.com', 'discord.com', 'notion.so', 'instagram.com', 'facebook.com'];
+            const isBlocker = blockers.some(d => url.toLowerCase().includes(d));
+
+            if (isBlocker) {
+                // Open in a standalone distraction-free popup
+                const w = 1100, h = 800;
+                const left = (screen.width/2)-(w/2), top = (screen.height/2)-(h/2);
+                window.open(url, 'PROBRO_POP', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no`);
+            } else {
+                // Open in internal browser
+                document.getElementById('browser-view').classList.remove('hidden');
+                document.getElementById('web-frame').src = url;
+                document.getElementById('url-indicator').innerText = url.toUpperCase();
+            }
+        }
+
+        function closeBrowser() {
+            document.getElementById('browser-view').classList.add('hidden');
+            document.getElementById('web-frame').src = "";
+        }
+
+        function saveData() {
+            localStorage.setItem('probroData', JSON.stringify(islandData));
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            document.getElementById('timer-display').innerText = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('start-btn');
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                btn.innerText = "RESUME";
+            } else {
+                const inputMins = document.getElementById('timer-input').value;
+                if (timeLeft <= 0 || timeLeft === 25*60) timeLeft = inputMins * 60;
+                btn.innerText = "ABORT";
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        alert("SESSION COMPLETE. REGROUP.");
+                        btn.innerText = "START";
+                        timeLeft = 25 * 60;
+                        updateTimerDisplay();
+                    }
+                }, 1000);
+            }
+        }
+
+        // Initialize grid on load
+        renderLinks();
+    </script>
+</body>
+</html>
