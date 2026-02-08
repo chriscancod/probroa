@@ -8,7 +8,7 @@
         :root {
             --bg: #050505;
             --card: #0d0d0d;
-            --accent: #a855f7; /* Protocol Purple */
+            --accent: #a855f7;
             --accent-glow: rgba(168, 85, 247, 0.3);
             --border: #1a1a1a;
             --text: #ffffff;
@@ -70,35 +70,32 @@
             display: flex; width: 100%; max-width: 500px; 
             border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 40px;
         }
-        .input-group input { flex: 1; background: none; border: none; color: #fff; font-family: inherit; outline: none; }
+        .input-group input { flex: 1; background: none; border: none; color: #fff; font-family: inherit; outline: none; font-size: 16px; }
         .input-group button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px; }
 
         .grid-layout { display: flex; gap: 15px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
         
-        /* --- LINK NODES --- */
         .link-node {
-            width: 130px; height: 90px; background: var(--card);
+            width: 140px; height: 100px; background: var(--card);
             border: 1px solid var(--border); position: relative;
             cursor: pointer; transition: 0.3s; border-radius: 4px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .link-node:hover { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); transform: translateY(-3px); }
-        .link-node span { font-size: 9px; color: var(--text-dim); margin-top: 10px; pointer-events: none; }
+        .link-node span { font-size: 9px; color: var(--text-dim); margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
         .delete-btn {
             position: absolute; top: 5px; right: 5px; background: none; border: none;
-            color: #444; cursor: pointer; opacity: 0;
+            color: #333; cursor: pointer; font-size: 14px;
         }
-        .link-node:hover .delete-btn { opacity: 1; }
         .delete-btn:hover { color: #ff4444; }
 
-        /* --- INTERNAL BROWSER --- */
-        #browser-view { position: fixed; inset: 0; background: #000; z-index: 500; display: flex; flex-direction: column; }
-        .browser-nav { padding: 10px 20px; background: #0d0d0d; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: none; border: 1px solid #333; color: #777; padding: 5px 15px; cursor: pointer; font-size: 10px; font-family: inherit; }
-        .back-btn:hover { color: #fff; border-color: var(--accent); }
-        #web-frame { flex: 1; border: none; background: #fff; }
-
-        .hidden { display: none !important; }
+        /* Notification Toast */
+        #toast {
+            position: fixed; bottom: 20px; right: 20px; background: var(--accent);
+            color: white; padding: 10px 20px; border-radius: 4px; font-size: 12px;
+            display: none; z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -106,7 +103,7 @@
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <span class="status-dot"></span>
-            <span class="status-text">PROBRO OS</span>
+            <span class="status-text">PROBRO // PROTOCOL</span>
             <button id="toggle-btn" onclick="toggleSidebar()">[ — ]</button>
         </div>
         
@@ -121,7 +118,7 @@
             </div>
 
             <nav class="island-list">
-                <label>TARGET_VOLUMES</label>
+                <label>ACTIVE_VOLUMES</label>
                 <button onclick="selectIsland('School')" id="btn-School" class="active">01. SCHOOL</button>
                 <button onclick="selectIsland('Work')" id="btn-Work">02. WORK</button>
                 <button onclick="selectIsland('Break')" id="btn-Break">03. BREAK</button>
@@ -130,37 +127,32 @@
     </aside>
 
     <main class="viewport">
-        <section id="setup-view" class="center-view">
+        <section class="center-view">
             <div class="protocol-header">
                 <h1 id="island-title">PROBRO // SCHOOL</h1>
-                <p>ELIMINATE ALL DISTRACTIONS.</p>
+                <p>PROTOCOL ACTIVE. LOCK IN.</p>
             </div>
 
             <div class="input-group">
-                <input type="text" id="link-input" placeholder="// PASTE URL (e.g. wikipedia.org)">
+                <input type="text" id="link-input" placeholder="// PASTE URL TO ADD TO GRID">
                 <button onclick="handleAddLink()">+</button>
             </div>
 
             <div id="links-container" class="grid-layout"></div>
         </section>
-
-        <div id="browser-view" class="hidden">
-            <div class="browser-nav">
-                <button onclick="closeBrowser()" class="back-btn">← ESCAPE_PROBRO</button>
-                <span id="url-indicator" style="font-size: 10px; color: var(--accent);"></span>
-            </div>
-            <iframe id="web-frame" src=""></iframe>
-        </div>
     </main>
+
+    <div id="toast"></div>
 
     <script>
         let currentIsland = 'School';
         let timerInterval = null;
         let timeLeft = 25 * 60;
 
+        // Load data
         let islandData = JSON.parse(localStorage.getItem('probroData')) || {
-            'School': ['wikipedia.org'], 
-            'Work': ['github.com'], 
+            'School': ['wikipedia.org', 'khanacademy.org'], 
+            'Work': ['github.com', 'notion.so'], 
             'Break': ['youtube.com']
         };
 
@@ -171,13 +163,10 @@
         function selectIsland(name) {
             currentIsland = name;
             document.getElementById('island-title').innerText = `PROBRO // ${name.toUpperCase()}`;
-            
             document.querySelectorAll('.island-list button').forEach(btn => {
                 btn.classList.toggle('active', btn.id === `btn-${name}`);
             });
-            
             renderLinks();
-            closeBrowser();
         }
 
         function handleAddLink() {
@@ -186,94 +175,19 @@
             if (val) {
                 if (!val.startsWith('http')) val = 'https://' + val;
                 islandData[currentIsland].push(val);
-                saveData();
+                localStorage.setItem('probroData', JSON.stringify(islandData));
                 renderLinks();
                 input.value = '';
+                showToast("NODE ADDED TO PROTOCOL");
             }
         }
 
         function removeLink(e, index) {
-            e.stopPropagation(); // Prevents opening the link when clicking delete
+            e.stopPropagation();
             islandData[currentIsland].splice(index, 1);
-            saveData();
+            localStorage.setItem('probroData', JSON.stringify(islandData));
             renderLinks();
         }
 
         function renderLinks() {
-            const container = document.getElementById('links-container');
-            container.innerHTML = islandData[currentIsland].map((url, i) => {
-                let display = url.replace('https://','').replace('http://','').split('/')[0];
-                return `
-                    <div class="link-node" onclick="openInApp('${url}')">
-                        <button class="delete-btn" onclick="removeLink(event, ${i})">×</button>
-                        <div style="font-size: 20px; color: var(--accent);">↗</div>
-                        <span>${display.toUpperCase()}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function openInApp(url) {
-            // Sites that notoriously block iframes
-            const blockers = ['google.com', 'github.com', 'discord.com', 'notion.so', 'instagram.com', 'facebook.com'];
-            const isBlocker = blockers.some(d => url.toLowerCase().includes(d));
-
-            if (isBlocker) {
-                // Open in a standalone distraction-free popup
-                const w = 1100, h = 800;
-                const left = (screen.width/2)-(w/2), top = (screen.height/2)-(h/2);
-                window.open(url, 'PROBRO_POP', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no`);
-            } else {
-                // Open in internal browser
-                document.getElementById('browser-view').classList.remove('hidden');
-                document.getElementById('web-frame').src = url;
-                document.getElementById('url-indicator').innerText = url.toUpperCase();
-            }
-        }
-
-        function closeBrowser() {
-            document.getElementById('browser-view').classList.add('hidden');
-            document.getElementById('web-frame').src = "";
-        }
-
-        function saveData() {
-            localStorage.setItem('probroData', JSON.stringify(islandData));
-        }
-
-        function updateTimerDisplay() {
-            const mins = Math.floor(timeLeft / 60);
-            const secs = timeLeft % 60;
-            document.getElementById('timer-display').innerText = 
-                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function toggleTimer() {
-            const btn = document.getElementById('start-btn');
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                btn.innerText = "RESUME";
-            } else {
-                const inputMins = document.getElementById('timer-input').value;
-                if (timeLeft <= 0 || timeLeft === 25*60) timeLeft = inputMins * 60;
-                btn.innerText = "ABORT";
-                timerInterval = setInterval(() => {
-                    timeLeft--;
-                    updateTimerDisplay();
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                        alert("SESSION COMPLETE. REGROUP.");
-                        btn.innerText = "START";
-                        timeLeft = 25 * 60;
-                        updateTimerDisplay();
-                    }
-                }, 1000);
-            }
-        }
-
-        // Initialize grid on load
-        renderLinks();
-    </script>
-</body>
-</html>
+            const container = document.
