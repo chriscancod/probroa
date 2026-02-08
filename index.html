@@ -8,28 +8,47 @@
         :root { --bg: #050505; --card: #0d0d0d; --accent: #a855f7; --border: #1a1a1a; --text: #ffffff; --text-dim: #555555; }
         body { margin: 0; font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; }
         
+        /* Sidebar */
         .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #080808; border-right: 1px solid var(--border); transition: 0.4s; z-index: 100; padding: 20px; box-sizing: border-box; }
         .sidebar.collapsed { transform: translateX(-240px); }
         #toggle-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; padding: 5px 10px; position: absolute; right: 10px; top: 10px; }
         
-        .timer-card { background: var(--card); padding: 20px; border: 1px solid var(--border); margin-top: 40px; border-radius: 4px; }
+        .timer-card { background: var(--card); padding: 20px; border: 1px solid var(--border); margin-top: 40px; border-radius: 4px; text-align: center; }
         #timer-display { font-size: 42px; font-weight: bold; color: var(--accent); margin-bottom: 15px; }
-        .timer-inputs button { width: 100%; background: var(--accent); color: #fff; border: none; font-weight: bold; cursor: pointer; padding: 10px; }
+        .timer-inputs button { width: 100%; background: var(--accent); color: #fff; border: none; font-weight: bold; cursor: pointer; padding: 10px; border-radius: 2px; }
 
+        /* Main View */
         .viewport { margin-left: 260px; height: 100vh; transition: 0.4s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .sidebar.collapsed + .viewport { margin-left: 20px; }
 
-        .grid-layout { display: flex; gap: 15px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
-        .link-node { width: 140px; height: 100px; background: var(--card); border: 1px solid var(--border); position: relative; cursor: pointer; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; }
-        .link-node:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
-        .link-node span { font-size: 10px; color: var(--text-dim); margin-top: 8px; text-transform: uppercase; }
-        
-        .input-group { border-bottom: 1px solid var(--border); width: 100%; max-width: 400px; display: flex; padding: 10px; }
-        .input-group input { background: none; border: none; color: white; flex: 1; outline: none; }
-        .input-group button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px; }
+        .protocol-header { text-align: center; margin-bottom: 30px; }
+        .protocol-header h1 { font-size: 2.5rem; letter-spacing: -1px; margin: 0; }
+        .protocol-header p { font-size: 10px; color: var(--text-dim); letter-spacing: 4px; }
 
-        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; color: #333; cursor: pointer; }
-        .delete-btn:hover { color: red; }
+        /* Input Area */
+        .input-group { border-bottom: 1px solid var(--border); width: 100%; max-width: 450px; display: flex; padding: 10px; margin-bottom: 20px; }
+        .input-group input { background: none; border: none; color: white; flex: 1; outline: none; font-family: inherit; font-size: 14px; }
+        .input-group button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px; font-weight: bold; }
+
+        /* Grid */
+        .grid-layout { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 800px; }
+        
+        /* The Node (Anchor Tag) */
+        .link-node { 
+            width: 140px; height: 100px; background: var(--card); border: 1px solid var(--border); 
+            position: relative; cursor: pointer; border-radius: 4px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: 0.3s; text-decoration: none; color: var(--text);
+        }
+        .link-node:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); transform: translateY(-3px); }
+        .link-node span { font-size: 10px; color: var(--text-dim); margin-top: 10px; text-transform: uppercase; text-align: center; width: 90%; overflow: hidden; }
+        
+        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; color: #333; cursor: pointer; font-size: 16px; z-index: 10; }
+        .delete-btn:hover { color: #ff4444; }
+
+        .island-nav { margin-top: 30px; display: flex; flex-direction: column; gap: 12px; }
+        .island-nav button { background: none; border: none; color: #444; text-align: left; cursor: pointer; font-family: inherit; font-size: 14px; transition: 0.2s; }
+        .island-nav button.active { color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -39,21 +58,25 @@
         <div class="timer-card">
             <div id="timer-display">25:00</div>
             <div class="timer-inputs">
-                <input type="number" id="timer-input" value="25" style="width: 40px; background: #000; color: #fff; border: 1px solid #333; margin-bottom: 10px;">
+                <input type="number" id="timer-input" value="25" style="width: 50px; background: #000; color: #fff; border: 1px solid #333; margin-bottom: 10px; text-align: center;">
                 <button onclick="toggleTimer()" id="start-btn">ENGAGE</button>
             </div>
         </div>
-        <nav style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px;">
-            <button onclick="selectIsland('School')" style="background: none; border: none; color: var(--accent); text-align: left; cursor: pointer;">01. SCHOOL</button>
-            <button onclick="selectIsland('Work')" style="background: none; border: none; color: #555; text-align: left; cursor: pointer;">02. WORK</button>
-            <button onclick="selectIsland('Break')" style="background: none; border: none; color: #555; text-align: left; cursor: pointer;">03. BREAK</button>
+        <nav class="island-nav">
+            <label style="font-size: 9px; color: var(--text-dim);">VOLUMES</label>
+            <button onclick="selectIsland('School')" id="nav-School" class="active">01. SCHOOL</button>
+            <button onclick="selectIsland('Work')" id="nav-Work">02. WORK</button>
+            <button onclick="selectIsland('Break')" id="nav-Break">03. BREAK</button>
         </nav>
     </aside>
 
     <main class="viewport">
-        <h1 id="island-title">PROBRO // SCHOOL</h1>
+        <div class="protocol-header">
+            <h1 id="island-title">PROBRO // SCHOOL</h1>
+            <p>LOCK IN. ELIMINATE NOISE.</p>
+        </div>
         <div class="input-group">
-            <input type="text" id="link-input" placeholder="// ADD URL">
+            <input type="text" id="link-input" placeholder="// ADD FULL URL (e.g. google.com)">
             <button onclick="handleAddLink()">+</button>
         </div>
         <div id="links-container" class="grid-layout"></div>
@@ -63,34 +86,43 @@
         let currentIsland = 'School';
         let timeLeft = 25 * 60;
         let timerInterval = null;
-        let islandData = JSON.parse(localStorage.getItem('proData')) || { School: ['wikipedia.org'], Work: [], Break: [] };
+        
+        // Use a new storage key to avoid old data conflicts
+        let islandData = JSON.parse(localStorage.getItem('probro_v4')) || { 
+            School: ['wikipedia.org', 'khanacademy.org'], 
+            Work: ['github.com'], 
+            Break: ['spotify.com'] 
+        };
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
 
         function renderLinks() {
             const container = document.getElementById('links-container');
-            container.innerHTML = islandData[currentIsland].map((url, i) => `
-                <div class="link-node" onclick="openNode('${url}')">
-                    <button class="delete-btn" onclick="removeLink(event, ${i})">×</button>
-                    <div style="font-size: 20px; color: var(--accent);">[↗]</div>
-                    <span>${url.split('.')[0]}</span>
-                </div>
-            `).join('');
-        }
-
-        function openNode(url) {
-            if (!url.startsWith('http')) url = 'https://' + url;
-            const popup = window.open(url, '_blank', 'width=1000,height=800,menubar=no,toolbar=no');
-            if (!popup || popup.closed || typeof popup.closed == 'undefined') { 
-                alert("POPUP BLOCKED: Please click the 'icon' in the URL bar to allow popups for this site.");
-            }
+            container.innerHTML = '';
+            
+            islandData[currentIsland].forEach((url, i) => {
+                const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+                const display = url.replace('https://','').replace('http://','').split('/')[0];
+                
+                const node = document.createElement('div');
+                node.className = 'link-node-wrapper';
+                node.innerHTML = `
+                    <div class="link-node" onclick="window.open('${fullUrl}', '_blank', 'width=1100,height=800')">
+                        <button class="delete-btn" onclick="removeLink(event, ${i})">×</button>
+                        <div style="font-size: 20px; color: var(--accent);">[↗]</div>
+                        <span>${display}</span>
+                    </div>
+                `;
+                container.appendChild(node.firstElementChild);
+            });
         }
 
         function handleAddLink() {
             const input = document.getElementById('link-input');
-            if (input.value) {
-                islandData[currentIsland].push(input.value);
-                localStorage.setItem('proData', JSON.stringify(islandData));
+            let val = input.value.trim();
+            if (val) {
+                islandData[currentIsland].push(val);
+                localStorage.setItem('probro_v4', JSON.stringify(islandData));
                 renderLinks();
                 input.value = '';
             }
@@ -99,25 +131,34 @@
         function removeLink(e, i) {
             e.stopPropagation();
             islandData[currentIsland].splice(i, 1);
-            localStorage.setItem('proData', JSON.stringify(islandData));
+            localStorage.setItem('probro_v4', JSON.stringify(islandData));
             renderLinks();
         }
 
-        function selectIsland(n) { currentIsland = n; document.getElementById('island-title').innerText = `PROBRO // ${n.toUpperCase()}`; renderLinks(); }
+        function selectIsland(n) {
+            currentIsland = n;
+            document.getElementById('island-title').innerText = `PROBRO // ${n.toUpperCase()}`;
+            document.querySelectorAll('.island-nav button').forEach(b => b.classList.toggle('active', b.id === `nav-${n}`));
+            renderLinks();
+        }
 
         function toggleTimer() {
             const btn = document.getElementById('start-btn');
             if (timerInterval) { clearInterval(timerInterval); timerInterval = null; btn.innerText = "RESUME"; }
             else {
                 btn.innerText = "ABORT";
+                const inputMins = document.getElementById('timer-input').value;
+                if(timeLeft === 25*60) timeLeft = inputMins * 60;
+                
                 timerInterval = setInterval(() => {
                     timeLeft--;
                     let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
                     document.getElementById('timer-display').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-                    if (timeLeft <= 0) { clearInterval(timerInterval); alert("SESSION COMPLETE"); }
+                    if (timeLeft <= 0) { clearInterval(timerInterval); alert("SESSION COMPLETE"); btn.innerText = "START"; timeLeft = 25*60; }
                 }, 1000);
             }
         }
+        
         renderLinks();
     </script>
 </body>
